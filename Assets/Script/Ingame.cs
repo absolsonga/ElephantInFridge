@@ -2,6 +2,7 @@
 using System.Collections;
 using UnityEngine.UI;
 using System.Collections.Generic;
+using UnityEngine.SceneManagement;
 
 public class Ingame : MonoBehaviour
 {
@@ -12,9 +13,11 @@ public class Ingame : MonoBehaviour
     public GameObject bg1, bg2;
     private Animator animator;
 
-    public Text state;
+    public Text highScoreText, scoreText, floorText;
 
-    public float progress = 0.0f;
+    public static float score = 0.0f;
+    public static int floor = 0;
+    public bool living = true;
 
     private Vector3 mousePos;
     private Vector2 touchStartPos;
@@ -52,6 +55,8 @@ public class Ingame : MonoBehaviour
 
     void Start()
     {
+        score = floor = 0;
+        highScoreText.text = "" + PlayerPrefs.GetFloat("Highscore", 0);
         touchStarted.AddRange(new bool[10]);
         touchStartTime.AddRange(new float[10]);
         animator = Player.GetComponent<Animator>();
@@ -62,34 +67,36 @@ public class Ingame : MonoBehaviour
 
     void Update()
     {
-        progress += 1.0f * Time.deltaTime;
-        if (Player.transform.position.y >= 1.5f)
+        if (living)
         {
-            float offset = Player.transform.position.y - 1.5f;
-            Player.transform.Translate(Vector2.down * offset);
-            bg1.transform.Translate(Vector2.down * offset);
-            bg2.transform.Translate(Vector2.down * offset);
+            score += 100f * Time.deltaTime;
+            if (Player.transform.position.y >= 1.5f)
+            {
+                float offset = Player.transform.position.y - 1.5f;
+                Player.transform.Translate(Vector2.down * offset);
+                bg1.transform.Translate(Vector2.down * offset);
+                bg2.transform.Translate(Vector2.down * offset);
+            }
+
+            bg1.transform.Translate(Vector2.down * 6.0f * Time.deltaTime);
+            bg2.transform.Translate(Vector2.down * 6.0f * Time.deltaTime);
+
+            if (Input.GetKeyDown(KeyCode.Space))
+                if (animator.GetBool("jumpchk") == false)
+                    Jump();
+            if (Input.GetKeyDown(KeyCode.DownArrow))
+                if (animator.GetBool("jumpchk") == false)
+                    GoDown();
+
+            scoreText.text = "" + (int)score;
+            floorText.text = "Floor " + floor;
+            touchEvent();
         }
-
-        bg1.transform.Translate(Vector2.down * 6.0f * Time.deltaTime);
-        bg2.transform.Translate(Vector2.down * 6.0f * Time.deltaTime);
-
-        if (Input.GetKeyDown(KeyCode.Space))
-            Jump();
-        if (Input.GetKeyDown(KeyCode.DownArrow))
-            GoDown();
-
-        state.text = "" + progress;
-        touchEvent();
-    }
-
-    private void SpawnEnemy(string type)
-    {
-        switch (type)
+        if (Player.transform.position.y <= -9.5f)
         {
-            case "soju" :
-                
-                break;
+            if (score > PlayerPrefs.GetFloat("HighScore", 0))
+                PlayerPrefs.SetFloat("Highscore", (int)score);
+            SceneManager.LoadScene(2);
         }
     }
 
@@ -171,7 +178,11 @@ public class Ingame : MonoBehaviour
             else if (angle < 180)
             {
                 // down
-                GoDown();
+                if (animator.GetBool("jumpchk") == false)
+                {
+                    GoDown();
+                    Ingame.floor -= 1;
+                }
             }
             else if (angle < 270)
             {
@@ -180,7 +191,8 @@ public class Ingame : MonoBehaviour
             else
             {
                 // up
-                Jump();
+                if (animator.GetBool("jumpchk") == false)
+                    Jump();
 
             }
         }

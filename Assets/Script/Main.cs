@@ -1,11 +1,16 @@
 ﻿using UnityEngine;
+using UnityEngine.UI;
 using System.Collections;
 using UnityEngine.SceneManagement;
 
 public class Main : MonoBehaviour {
 
-    public static int score = 0;
-    public static int highscore = 0;
+    public Text highScore;
+
+    void Start()
+    {
+        highScore.text = "" + PlayerPrefs.GetFloat("Highscore", 0);
+    }
 
 	// Update is called once per frame
 	void Update () {
