@@ -19,6 +19,7 @@ public class Result : MonoBehaviour {
 
     public void Restart()
     {
+        SoundManager.instance.PlaySound1();
         SceneManager.LoadScene(0);
     }
 }

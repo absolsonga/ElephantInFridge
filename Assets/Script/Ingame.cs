@@ -6,8 +6,10 @@ using UnityEngine.SceneManagement;
 
 public class Ingame : MonoBehaviour
 {
+    public GameObject pauseInterface;
 
-    public GameObject Player;
+
+    public Player player;
     public Sprite jump, idle;
     public float speed = 10f;
     public GameObject bg1, bg2;
@@ -23,34 +25,24 @@ public class Ingame : MonoBehaviour
     private Vector2 touchStartPos;
     private List<bool> touchStarted = new List<bool>();
     private List<float> touchStartTime = new List<float>();
-    private const float minSwipeDistancePixels = 100f;
+    private const float minSwipeDistancePixels = 50f;
     private const float minSwipeTime = 0.75f;
 
     BoxCollider2D collider;
-    Rigidbody2D rb;
-    const float jumpPower = 1175f;
-
 
     public void Jump()
     {
-        collider.enabled = false;
-        rb.AddForce(Vector2.up * jumpPower);
+        //rb.AddForce(Vector2.up * jumpPower);
+
         animator.SetBool("jumpchk", true);
-        StartCoroutine(ResetCollision());
+        player.leftDist = 3.23f;
 
     }
 
     void GoDown()
     {
-        collider.enabled = false;
-        StartCoroutine(ResetCollision());
-    }
+        player.leftDist = -3.23f;
 
-    IEnumerator ResetCollision()
-    {
-        yield return new WaitForSeconds(0.5f);
-        collider.enabled = true;
-        yield break;
     }
 
     void Start()
@@ -59,27 +51,29 @@ public class Ingame : MonoBehaviour
         highScoreText.text = "" + PlayerPrefs.GetFloat("Highscore", 0);
         touchStarted.AddRange(new bool[10]);
         touchStartTime.AddRange(new float[10]);
-        animator = Player.GetComponent<Animator>();
+        animator = player.GetComponent<Animator>();
 
-        collider = Player.GetComponent<BoxCollider2D>();
-        rb = Player.GetComponent<Rigidbody2D>();
+        collider = player.GetComponent<BoxCollider2D>();
     }
 
     void Update()
     {
+        if (player.transform.position.y >= 1.5f)
+        {
+            float offset = player.transform.position.y - 1.5f;
+            player.transform.Translate(Vector2.down * offset);
+            bg1.transform.Translate(Vector2.down * offset);
+            bg2.transform.Translate(Vector2.down * offset);
+        }
+
+        float speed = 5.0f * (1.0f + (floor / 10) * 0.05f);
+        bg1.transform.Translate(Vector2.down * speed * Time.deltaTime);
+        bg2.transform.Translate(Vector2.down * speed * Time.deltaTime);
+        player.transform.Translate(Vector2.down * speed * Time.deltaTime);
         if (living)
         {
             score += 100f * Time.deltaTime;
-            if (Player.transform.position.y >= 1.5f)
-            {
-                float offset = Player.transform.position.y - 1.5f;
-                Player.transform.Translate(Vector2.down * offset);
-                bg1.transform.Translate(Vector2.down * offset);
-                bg2.transform.Translate(Vector2.down * offset);
-            }
 
-            bg1.transform.Translate(Vector2.down * 6.0f * Time.deltaTime);
-            bg2.transform.Translate(Vector2.down * 6.0f * Time.deltaTime);
 
             if (Input.GetKeyDown(KeyCode.Space))
                 if (animator.GetBool("jumpchk") == false)
@@ -92,8 +86,9 @@ public class Ingame : MonoBehaviour
             floorText.text = "Floor " + floor;
             touchEvent();
         }
-        if (Player.transform.position.y <= -9.5f)
+        if (player.transform.position.y <= -9.5f)
         {
+            
             if (score > PlayerPrefs.GetFloat("HighScore", 0))
                 PlayerPrefs.SetFloat("Highscore", (int)score);
             SceneManager.LoadScene(2);
@@ -140,15 +135,17 @@ public class Ingame : MonoBehaviour
             animator.SetBool("runchk", true);
             mousePos = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, -Camera.main.transform.position.z));
 
-            if (mousePos.x < 0)
+            if (-8.45f < mousePos.x && mousePos.x < -6f && -4f < mousePos.y && mousePos.y < -1.75f)
             {
-                Player.GetComponent<SpriteRenderer>().flipX = false;
-                Player.transform.Translate(Vector2.left * Time.deltaTime * speed);
+                print(mousePos.x +"," +mousePos.y);
+                player.GetComponent<SpriteRenderer>().flipX = false;
+                player.transform.Translate(Vector2.left * Time.deltaTime * speed);
             }
-            else if (mousePos.x > 0)
+            else if (6f < mousePos.x && mousePos.x < 8.5f && -4f < mousePos.y && mousePos.y < -1.75f)
             {
-                Player.GetComponent<SpriteRenderer>().flipX = true;
-                Player.transform.Translate(Vector2.right * Time.deltaTime * speed);
+                print(mousePos.x + "," + mousePos.y);
+                player.GetComponent<SpriteRenderer>().flipX = true;
+                player.transform.Translate(Vector2.right * Time.deltaTime * speed);
             }
         }
         else
@@ -198,17 +195,36 @@ public class Ingame : MonoBehaviour
         }
     }
 
-
-void OnCollisionEnter2D(Collision2D coll)
+    void OnTriggerEnter2D()
     {
-        if (coll.gameObject.tag == "floor")
-        {
-            animator.SetBool("jumpchk", false);
-        }
-        else
-        {
-            animator.SetBool("jumpchk", true);
-        }
 
+    }
+
+    public void OnPause()
+    {
+        SoundManager.instance.PlaySound1();
+        Time.timeScale = 0;
+        pauseInterface.SetActive(true);
+    }
+
+    public void OnResume()
+    {
+        SoundManager.instance.PlaySound1();
+        Time.timeScale = 1f;
+        pauseInterface.SetActive(false);
+    }
+
+    public void OnRestart()
+    {
+        SoundManager.instance.PlaySound1();
+        Time.timeScale = 1f;
+        SceneManager.LoadScene("InGame");
+    }
+
+    public void OnEnd()
+    {
+        SoundManager.instance.PlaySound1();
+        Time.timeScale = 1f;
+        SceneManager.LoadScene("Main");
     }
 }

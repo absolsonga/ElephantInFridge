@@ -19,6 +19,7 @@ public class Main : MonoBehaviour {
 
     public void start()
     {
+        SoundManager.instance.PlaySound1();
         SceneManager.LoadScene(1);
     }
 }
